@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<!-- 
+(1). 输出方式appender一般有5种：
+
+             org.apache.log4j.RollingFileAppender(滚动文件，自动记录最新日志)
+             org.apache.log4j.ConsoleAppender (控制台)  
+             org.apache.log4j.FileAppender (文件)
+             org.apache.log4j.DailyRollingFileAppender (每天产生一个日志文件)
+             org.apache.log4j.WriterAppender (将日志信息以流格式发送到任意指定的地方)
+
+(2). 日记记录的优先级priority，优先级由高到低分为 
+            OFF ,FATAL ,ERROR ,WARN ,INFO ,DEBUG ,ALL。
+            Log4j建议只使用FATAL ,ERROR ,WARN ,INFO ,DEBUG这五个级别。
+
+(3). 格式说明layout中的参数都以%开始，后面不同的参数代表不同的格式化信息（参数按字母表顺序列出）：
+                %c        输出所属类的全名，可在修改为 %d{Num} ,Num类名输出的维（如："org.apache.elathen.ClassName",%C{2}将输出elathen.ClassName）
+                %d       输出日志时间其格式为 %d{yyyy-MM-dd HH:mm:ss,SSS}，可指定格式 如 %d{HH:mm:ss}
+                %l        输出日志事件发生位置，包括类目名、发生线程，在代码中的行数
+                %n       换行符
+                %m      输出代码指定信息，如info(“message”),输出message
+                %p       输出优先级，即 FATAL ,ERROR 等
+                %r        输出从启动到显示该log信息所耗费的毫秒数
+                %t        输出产生该日志事件的线程名
+
+
+ -->
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="true">
+
+	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<!-- param name="ConversionPattern"
+				value="%p - %C{1}.%M(%L) | %m%n"/-->
+			<param name="ConversionPattern"
+				value="[%-5p] %d{HH:mm:ss} %c. - %m%n" />
+		</layout>
+ 		<filter class="org.apache.log4j.varia.LevelRangeFilter">     
+		  <param name="LevelMin" value="WARN"/>     
+		  <param name="LevelMax" value="ERROR" />     
+		</filter>
+	</appender>
+
+	<appender name="FILE"
+		class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="d:/test/vms.log" />
+		
+		<!--  <param name="File" value="/export/home/weblogic/Oracle/Middleware/user_projects/domains/mydomain/logs/vms.log" />-->
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />	
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] %d{yyyy-MM-dd HH:mm:ss} %c.%M(%L) - %m%n" />
+		</layout>
+		<!-- 设置过滤条件,最低为INFO,最高为ERROR -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">     
+		  <param name="LevelMin" value="DEBUG" />     
+		  <param name="LevelMax" value="ERROR" />     
+		</filter> 
+	</appender>
+	
+	<!-- 
+	<appender name="myFILE"
+		class="org.apache.log4j.RollingFileAppender">
+		<param name="File" value="${CATALINA_HOME}/logs/appName.log" />
+		<param name="append" value="true" />
+		<param name="MaxBackupIndex" value="5" />
+		<param name="MaxFileSize" value="2048KB"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] %d{yyyy-MM-dd HH:mm:ss} %c.%M(%L) - %m%n" />
+		</layout>
+	</appender>
+    -->
+    <!-- 
+	 <appender name="JDBCAppender" class="org.apache.log4j.jdbc.JDBCAppender">
+	     <param name="URL" value="jdbc:oracle:thin:@127.0.0.1:1521:btv"/>
+	     <param name="user" value="kettle"/> 
+	     <param name="password" value="kettle"/> 
+	     <param name="driver" value="oracle.jdbc.driver.OracleDriver"/>
+	     <layout class="org.apache.log4j.PatternLayout">
+	       <param name="ConversionPattern" value="insert into log4j(createdate,thread,level_,class,message) values(\'%d\',\'%t\',\'%-5p\',\'%c\',\'%m\')"/>
+	     </layout>
+	 </appender>
+	 -->
+	
+	<!-- 指定的程序包org.apache.catalina的错误日志通过FILE通道写入。 additivity指示是否遵循缺省的继承机制-->
+	<logger name="org.apache.catalina" additivity="false" >  
+		<level value="ERROR" />
+		<appender-ref ref="FILE" />
+	</logger>
+ <!-- 
+ <logger name="com.ibatis">
+		<level value="WARN" />
+	</logger>
+	<logger name="java.sql">
+		<level value="DEBUG"/>
+	</logger>
+	<logger name="org.apache.cxf">
+		<level value="INFO"/>
+	</logger>
+	<logger name="com.ctvit.framework">
+		<level value="DEBUG"/>
+	</logger>
+	<logger name="org.springframework">
+		<level value="INFO"/>
+	</logger>
+	<logger name="com.ctvit.vms">
+		<level value="INFO"/>
+	</logger>
+
+ 
+ 
+ <logger name="java.sql">
+	<level value="DEBUG"/>
+</logger>	
+本地调试
+<logger name="com.ibatis">
+	<level value="WARN" />
+</logger>
+<logger name="java.sql">
+	<level value="DEBUG"/>
+</logger>
+<logger name="org.apache.cxf">
+	<level value="INFO"/>
+</logger>
+<logger name="com.ctvit.framework">
+	<level value="WARN"/>
+</logger>
+<logger name="org.springframework">
+	<level value="INFO"/>
+</logger>
+<logger name="com.ctvit.vms">
+	<level value="INFO"/>
+</logger> 
+ -->	
+ 
+<!--	<logger name="TRACER">-->
+<!--		<level value="TRACE"/>-->
+<!--	</logger>-->
+	<!-- 设置接收所有输出的通道 -->
+	<root>
+		<level value="INFO" />
+		<appender-ref ref="CONSOLE" />
+		<appender-ref ref="FILE" />
+	</root>
+</log4j:configuration>
+

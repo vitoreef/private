@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.1.xsd ">
+	
+	<bean id="menuMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="cn.cntv.vpe.common.dao.mapper.MenuMapper" />
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	<bean id="droplistMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="cn.cntv.vpe.common.dao.mapper.DroplistMapper" />
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	<bean id="rolePermMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="cn.cntv.vpe.common.dao.mapper.RolePermMapper" />
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	<bean id="tempSearchDataidMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="cn.cntv.vpe.common.dao.mapper.TempSearchDataidMapper" />
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	<bean id="associatedWordMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="cn.cntv.vpe.common.dao.mapper.AssociatedWordMapper" />
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	
+	<!-- Redis配置 -->
+	<!-- POOL配置 -->
+	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+	    <property name="maxActive" value="2000" />
+	    <property name="maxIdle"   value="10" />
+	    <property name="maxWait"   value="1000" />
+	    <property name="testOnBorrow" value="true" />
+	</bean>
+	<!-- jedis 切片配置 可以配置多个 -->
+	<bean id="shardInfo" class="redis.clients.jedis.JedisShardInfo">
+	    <constructor-arg index="0" value="172.18.72.73" />
+	    <constructor-arg index="1" value="6379" />
+	    <constructor-arg index="2" value="100" /><!-- 链接超时设定 -->
+	</bean>
+	<!-- jedis shard pool 切片池配置 -->
+	<bean  id="shardedJedisPool" class="redis.clients.jedis.ShardedJedisPool">
+		<constructor-arg index="0" ref="jedisPoolConfig" />
+		<constructor-arg index="1">
+	        <list>
+	            <ref bean="shardInfo" />
+	            <!-- <ref bean = "shardInfo2"> -->
+	        </list>
+    	</constructor-arg>
+	</bean>
+	<bean id="redisUtil" class="cn.cntv.vpe.util.RedisUtil">
+		<property name="pool" ref="shardedJedisPool"/>
+	</bean>
+	<!-- jedis 单点 配置 -->
+	<bean id="jedisPool" class="redis.clients.jedis.JedisPool">
+		<constructor-arg index="0" ref="jedisPoolConfig" />
+		<constructor-arg index="1" value="172.18.72.73"/>
+		<constructor-arg index="2" value="6379"/>
+	</bean>
+	<!-- /Redis配置 -->
+	
+	<!-- solr -->
+	<bean id="solrJSearcher" class="cn.cntv.vpe.common.solr.SolrJSearcher">
+		<!-- solr库地址 -->
+		<property name="vsurl" value="http://172.18.118.150:8080/solr/videoset" />
+		<property name="vdurl" value="http://172.18.118.150:8080/solr/video" />
+<!-- 		<property name="vsurl" value="http://10.64.16.49/solr/videoset" /> -->
+<!-- 		<property name="vdurl" value="http://10.64.16.49/solr/video" /> -->
+		
+		<!-- solr精确分页部分 分页大小   默认2000 -->
+		<property name="solrPageSize" value="2000" />
+		<!-- 在solr精确分页大小基础增加数量,用于精确分页最后一页数据填充补齐   默认100 -->
+		<property name="fillIncrement" value="100" />
+		<!-- solr非精确分页部分分页大小    默认100-->
+		<property name="solrSmallPageSize" value="100" />
+		
+		<!-- 视频权重 分配    默认videoname^10 keywords^5 videobrief^1 origialvideoid^10 -->
+		<property name="vdqf" value="videoname^10 videoname1^1 videoname2^1 videoname3^1 keywords^5 videobrief^1 origialvideoid^10" />
+		<!-- 视频集权重分配  默认videosetname^10 keywords^5 videosetbrief^1 -->
+		<property name="vsqf" value="videosetname^10 videosetname1^1 videosetname2^1 videosetname3^1 keywords^5 videosetbrief^1" />
+		
+		<!-- 时间权重分配   默认recip(ms(NOW,inputedtime),3.16e-11,1,1)^10 -->
+		<property name="bf" value="recip(ms(NOW,inputedtime),3.16e-11,1,1)^10" />
+		
+	</bean>
+</beans>

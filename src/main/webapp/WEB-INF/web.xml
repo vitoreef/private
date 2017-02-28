@@ -1,12 +1,100 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" version="2.5">
-  <display-name>Private</display-name>
+<web-app version="2.5" 
+    xmlns="http://java.sun.com/xml/ns/javaee" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
+    http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+  
+  <display-name>vpe</display-name>
+  
   <welcome-file-list>
-    <welcome-file>index.html</welcome-file>
-    <welcome-file>index.htm</welcome-file>
-    <welcome-file>index.jsp</welcome-file>
-    <welcome-file>default.html</welcome-file>
-    <welcome-file>default.htm</welcome-file>
-    <welcome-file>default.jsp</welcome-file>
+    <welcome-file>/index.jsp</welcome-file>
   </welcome-file-list>
+
+<error-page>
+	<error-code>404</error-code>
+	<location>/400.jsp</location>
+</error-page>
+<error-page>
+	<error-code>500</error-code>
+	<location>/500.jsp</location>
+</error-page>
+
+  
+<!-- 模板文件的编码方式. -->
+  <!-- shiro 登录框架配置-->
+   <filter>
+        <filter-name>shiroFilter</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <init-param>
+             <param-name>targetFilterLifecycle</param-name>
+             <param-value>true</param-value>
+        </init-param>
+   </filter>
+
+   <filter-mapping>
+        <filter-name>shiroFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+   </filter-mapping>
+  <!-- struts2 配置 -->
+  <filter>
+    <filter-name>struts2</filter-name>
+    <filter-class>org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>struts2</filter-name>
+    <url-pattern>/*</url-pattern><!-- action 无后缀 http://localhost:8080/ka/ka0100-->
+  </filter-mapping>
+ 
+  <!-- Spring 配置 -->
+  <filter>
+  <filter-name>encodingFilter</filter-name>
+  <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+  <init-param>
+   <param-name>encoding</param-name>
+   <param-value>UTF-8</param-value>
+  </init-param>
+  <init-param>
+   <param-name>forceEncoding</param-name>
+   <param-value>true</param-value>
+  </init-param>
+ </filter>
+  <listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+     <param-value>classpath:applicationContext.xml,
+    			classpath:applicationContext-shiro.xml,
+		    	classpath:applicationContext-common.xml,
+				classpath:applicationContext-dao.xml,
+				classpath:applicationContext-ka.xml,
+				classpath:applicationContext-kb.xml,
+				classpath:applicationContext-kc.xml,
+				classpath:applicationContext-kd.xml,
+				classpath:applicationContext-ke.xml,
+				classpath:applicationContext-kf.xml,
+				classpath:applicationContext-ks.xml,
+				classpath:applicationContext-kt.xml,
+				classpath:applicationContext-kx.xml,
+				classpath:applicationContext-kz.xml,
+				classpath:applicationContext-ko.xml,
+				classpath:applicationContext-ky.xml,
+				classpath:applicationContext-log.xml,
+				classpath:applicationContext-notice.xml,
+        classpath:applicationContext-sync.xml
+    </param-value>
+  </context-param>
+  <servlet>
+	<servlet-name>JspSupportServlet</servlet-name>
+	<servlet-class>org.apache.struts2.views.JspSupportServlet</servlet-class>
+	<load-on-startup>1</load-on-startup>
+  </servlet>
+  <!-- 订单信息数据初始化  -->
+  <listener>
+    <listener-class>cn.cntv.vpe.kd.bean.DataInitManagerListener</listener-class>
+  </listener>
+  <listener>
+    <listener-class>cn.cntv.vpe.ko.bean.DataInitListener</listener-class>
+  </listener>
 </web-app>

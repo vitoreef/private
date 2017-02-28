@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+
+<!-- 配置数据源 -->
+	<!-- <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
+        <property name="url" value="jdbc:oracle:thin:@172.18.72.144:1521:cntvvms"/>
+        <property name="username" value="cntv_vms"/>
+        <property name="password" value="cntv_vms"/>
+	</bean>-->
+	 <bean id="parentDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+           destroy-method="close">
+           <property name="driverClassName" value="oracle.jdbc.OracleDriver" />
+<!--            <property name="url" value="jdbc:oracle:thin:@172.18.72.145:1521:cntvora" /> -->
+<!--            <property name="username" value="cntv_vms" /> -->
+<!--            <property name="password" value="cntv_vms" /> -->
+           <!--连接池启动时的初始化-->
+           <property name="initialSize" value="1"/>
+           <!--连接池的最大值-->
+           <property name="maxActive" value="500"/>
+           <!-- 最大空闲值，当经过一个高峰时间后，连接池可以慢慢将已经用不到的链接慢慢释放一部分，一直减少到maxle为止 -->
+           <property name="maxIdle" value="2"/>
+           <!-- 最小空闲值，当空闲的连接数少于阀值时，连接池就会预申请去一些链接，以免洪峰来时来不及申请-->
+           <property name="minIdle" value="1"/>               
+       </bean>
+
+       <bean id="dataSource" parent="parentDataSource"> 
+
+ 		<property name="url" value="jdbc:oracle:thin:@172.18.118.161:1521:standby" /> 
+            <property name="username" value="movedata" /> 
+           <property name="password" value="movedata" /> 
+
+       </bean>
+<!--
+       <bean id="dataSource" parent="parentDataSource">  
+   		<property name="url" value="jdbc:oracle:thin:@10.64.16.29:1521:cntvvpe" /> 
+             <property name="username" value="movedata" /> 
+           <property name="password" value="Cn2TV8Vms" /> 
+      </bean >  
+-->
+		 <!--bean id="dataSource" parent="parentDataSource">
+  		<property name="url" value="jdbc:oracle:thin:@10.70.56.188:1521:cntvtest" />
+              <property name="username" value="movedata" />
+             <property name="password" value="Cn2TV8Vms" />
+
+         </bean -->
+<!--        <bean id="dataSource_slave" parent="parentDataSource"> -->
+<!--            <property name="url" value="jdbc:oracle:thin:@172.18.72.145:1521:cntvora" /> -->
+<!--            <property name="username" value="cntv_vms" /> -->
+<!--            <property name="password" value="cntv_vms" /> -->
+<!--        </bean> -->
+<!--        <bean id="dynamicDataSource" class="cn.cntv.vms.common.pub.DynamicDataSource"> -->
+<!-- 			<property name="targetDataSources"> -->
+<!-- 				<map key-type="java.lang.String"> -->
+<!-- 					<entry value-ref="dataSource_main" key="dataSource_main"></entry> -->
+<!-- 					<entry value-ref="dataSource_slave" key="dataSource_slave"></entry> -->
+<!-- 				</map> -->
+<!-- 			</property> -->
+<!-- 			<property name="defaultTargetDataSource" ref="dataSource_main" > -->
+<!-- 			</property> -->
+<!--        </bean> -->
+<!--        <bean id="dataSourceSwitchInterceptor" class="cn.cntv.vms.common.pub.DataSourceSwitchInterceptor"/> -->
+<!--        <bean id="dataSourceSwitchProxy" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator"> -->
+<!--         <property name="beanNames"> -->
+<!--             <list> -->
+<!--             	<value>*Mapper</value> -->
+<!--             	<value>*mapper</value> -->
+<!--             </list> -->
+<!--         </property> -->
+        <!-- 对代理类进行加载拦截器(实现通知的过程) -->
+<!--         <property name="interceptorNames"> -->
+<!--             <list> -->
+<!--             	<value>dataSourceSwitchInterceptor</value> -->
+<!--             </list> -->
+<!--         </property> -->
+<!--     </bean> -->
+<!-- 配置连接池工厂 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation" value="classpath:mybatis-config.xml" />
+		<property name="dataSource" ref="dataSource" />
+<!-- 		<property name="mapperLocations" value="com/dm/dao.sql/*Mappers.xml"></property> -->
+	</bean>
+	
+	<!-- 媒资数据导入用 -zzj -->
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">  
+	    <constructor-arg name="sqlSessionFactory" ref="sqlSessionFactory"></constructor-arg>  
+	    <constructor-arg name="executorType" value="BATCH"></constructor-arg>  
+	</bean>
+	
+	
+<!-- 由spring管理mybatis的事物 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+<!-- 定义拦截器，用来指定事物属性，级别，和异常处理 -->  
+    <bean id="transactionInterceptor" class="org.springframework.transaction.interceptor.TransactionInterceptor">  
+        <property name="transactionManager" ref="transactionManager"></property>  
+        <property name="transactionAttributes">  
+            <props>  
+                <!-- 
+                	PROPAGATION_SUPPORTS: 如果已经存在事务,则加入事务;如果没有事务,则以非事务的方式执行;   
+                	PROPAGATION_MANDATORY: 使用当前事务, 如果没有, 则抛出异常;   
+                	PROPAGATION_REQUIRED: 新建事务,如果当前有事务, 则挂起;
+                	ROPAGATION_NOT_SUPPORTED:以非事务的方式执行, 如果当前有事务, 则挂起;   
+                	PROPAGATION_NEVER:以非事务的方式执行, 如果当前有事务,则抛出异常;   
+                	+/-Exception: + 表示异常出现时事物提交 - 表示异常出现时事务回滚 
+                -->  
+                <prop key="search*">PROPAGATION_SUPPORTS,readOnly</prop>
+                <prop key="insert*">PROPAGATION_REQUIRED,-Exception</prop>
+                <prop key="del*"> PROPAGATION_REQUIRED,-Exception</prop>
+                <prop key="delete*"> PROPAGATION_REQUIRED,-Exception</prop>
+                <prop key="update*">PROPAGATION_REQUIRED,-Exception</prop>
+            </props>
+        </property>
+    </bean>
+<!-- 用来定义那些类需要采用事物管理 spring 事物的动态代理类 BeanNameAutoProxyCreator 根据类名自动代理，接受表达式 -->
+    <bean id="BeanProxy" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+        <property name="beanNames">
+            <!-- 对类名以ServiceImpl结尾的类进行代理 -->
+            <value>*Service*</value>
+        </property>
+        <!-- 对代理类进行加载拦截器(实现通知的过程) -->
+        <property name="interceptorNames">
+            <list>
+                <value>transactionInterceptor</value>
+            </list>
+        </property>
+    </bean>
+	
+</beans>

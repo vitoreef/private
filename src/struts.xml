@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd">
+<struts>
+<constant name="struts.i18n.encoding" value="UTF-8"/>
+<constant name="struts.freemarker.manager.classname" value="cn.cntv.vpe.util.MyFreemarkerManager" />
+<constant name="struts.multipart.saveDir" value="/tmp"/>
+<constant name="struts.multipart.maxSize" value="1073741824"/>
+<constant name="struts.devMode" value="false" /><!-- 开发模式，部署的时候改为false -->
+<package name="VMS" extends="json-default">
+	<result-types>
+		<result-type name="freemarker"
+			class="org.apache.struts2.views.freemarker.FreemarkerResult"
+			default="true" />
+		<result-type name="jsonroot" class="org.apache.struts2.json.JSONResult">
+			<param name="noCache">true</param>
+			<param name="contentType">text/html</param>
+		</result-type>
+	</result-types>
+	
+	<interceptors>
+		<interceptor name="checkException" class="cn.cntv.vpe.common.pub.ExceptionInterceptor" />
+		<!-- 定义一个拦截器栈 -->
+		<interceptor-stack name="mydefault">
+		   <interceptor-ref name="defaultStack" />
+		   <interceptor-ref name="checkException" />
+		</interceptor-stack>
+	</interceptors>
+	<default-interceptor-ref name="mydefault" />
+	
+	<default-action-ref name="notFound"/>
+	
+	<global-results>
+	 	<result name="vms_exception">/WEB-INF/pages/common/error_exception.ftl</result>
+	</global-results>
+	
+	<global-exception-mappings>
+		<exception-mapping result="vms_exception" exception="cn.cntv.vpe.common.exception.VmsException"/>
+	</global-exception-mappings>
+	
+	<action name="notFound">
+		<result type="redirect">/400.jsp</result>
+	</action>
+	<action name="404">
+		<result type="redirect">/400.jsp</result>
+	</action>
+	
+	<action name="login_*" class="cn.cntv.vpe.common.action.LoginAction" method="{1}">
+		<result name="initLogin" >/WEB-INF/pages/common/login_soft.ftl</result>
+		<result name="returnUrl" type="dispatcher">/redirect.jsp</result>
+		<result name="ka" type="redirectAction">ka/ka0100_zylist</result>
+		<result name="kb" type="redirectAction">kb/kb0100_zylist</result>
+		<result name="kc" type="redirectAction">kc/kc0200_list</result>
+		<result name="kd" type="redirectAction">kd/kd0200</result>
+		<result name="ko" type="redirectAction">ko/ko0100</result>
+		<result name="ks" type="redirectAction">ks/ks0100</result>
+		<result name="kt" type="redirectAction">kt/kt0100_list</result>
+		<result name="ke" type="redirectAction">ke/ke0100_list</result>		
+		<result name="kelook" type="redirectAction">ke0100_look</result>
+		<result name="kx" type="redirectAction">kx/kx0400_serchPartList</result>
+		<result name="bi" type="redirectAction">bi/bi0110_orgSta</result>
+		<result name="changePassword">/WEB-INF/pages/kx/kx0904.ftl</result>
+		<result name="loginOK" type="redirectAction">menuInvokeKB</result>		
+		<result name="cntvkb" type="redirectAction">invokeKB</result>
+		<result name="logout" >/WEB-INF/pages/common/login_soft.ftl</result>
+		<result name="supersearch" >/WEB-INF/pages/common/supersearch.ftl</result>
+		<result name="index" type="freemarker">/WEB-INF/pages/ke/keIndex.ftl</result>
+		<result name="welcome" >/WEB-INF/pages/common/welcome.ftl</result>
+		<result name="firstpage" type="redirectAction">${returnUrl}</result>		
+	</action>
+	<action name="invokeKB" class="cn.cntv.vpe.common.action.KBInvokeAction" method="invoke">
+		<result name="invoke" type="redirect">${kburl}/CNTVKB?token=${token}</result>
+	</action>
+	<action name="menuInvokeKB" class="cn.cntv.vpe.common.action.KBInvokeAction" method="menuInvoke">
+		<result name="menuInvoke" type="redirect">${kburl}/CNTVKB/indexLogin?token=${token}</result>
+	</action>
+	<action name="returnvms" class="cn.cntv.vpe.common.action.KBInvokeAction" method="returnvms">
+		<result name="logout" type="redirectAction">login_logout</result>
+		<result name="success" type="redirectAction">ka/ka0100_zylist</result>
+		<result name="ka" type="redirectAction">ka/ka0100_zylist</result>
+		<result name="kb" type="redirectAction">kb/kb0100_zylist</result>
+		<result name="kc" type="redirectAction">kc/kc0200_list</result>
+		<result name="kd" type="redirectAction">kd/kd0200</result>
+		<result name="ko" type="redirectAction">ko/ko0100</result>
+		<result name="ks" type="redirectAction">ks/ks0100</result>
+		<result name="kt" type="redirectAction">kt/kt0100_list</result>		
+		<result name="ke" type="redirectAction">ke/ke0100_list</result>		
+		<result name="kelook" type="redirectAction">ke0100_look</result>
+		<result name="kx" type="redirectAction">kx/kx0400_serchPartList</result>
+	</action>
+</package>
+	<include file="cn/cntv/vpe/common/struts-common.xml"></include>
+	<include file="cn/cntv/vpe/ka/struts-ka.xml"></include>
+	<include file="cn/cntv/vpe/kb/struts-kb.xml"></include>
+	<include file="cn/cntv/vpe/kc/struts-kc.xml"></include>
+	<include file="cn/cntv/vpe/kd/struts-kd.xml"></include>
+	<include file="cn/cntv/vpe/kx/struts-kx.xml"></include>
+	<include file="cn/cntv/vpe/bi/struts-bi.xml"></include>
+	<include file="cn/cntv/vpe/kd/struts-kd.xml"></include>
+	<include file="cn/cntv/vpe/ke/struts-ke.xml"></include>
+	<include file="cn/cntv/vpe/kf/struts-kf.xml"></include>
+	<include file="cn/cntv/vpe/ko/struts-ko.xml"></include>
+	<include file="cn/cntv/vpe/ks/struts-ks.xml"></include>
+	<include file="cn/cntv/vpe/kt/struts-kt.xml"></include>
+	<include file="cn/cntv/vpe/kz/struts-kz.xml"></include>
+	<include file="cn/cntv/vpe/ky/struts-ky.xml"></include>
+</struts>

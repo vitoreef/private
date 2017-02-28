@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd">
+<struts>
+	<package name="VMS-common" namespace="/" extends="VMS">
+		<action name="menu_*" class="menuAction" method="{1}">
+			<result name="success">/WEB-INF/ka/ka0100.ftl</result>
+		</action>
+		<action name="advsearch_*" class="advSearchAction" method="{1}">
+			<result name="rsjson" type="json" />
+		</action>
+		
+		<action name="write" class="advSearchAction" method="write" />
+	</package>
+	<constant name="struts.ognl.allowStaticMethodAccess" value="true" />
+</struts>

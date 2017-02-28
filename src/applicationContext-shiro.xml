@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.1.xsd 
+	http://www.springframework.org/schema/context
+  	http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+
+	<bean id="hashedCredentialsMatcher" class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+		<property name="hashAlgorithmName" value="SHA-256"/>
+		<property name="storedCredentialsHexEncoded" value="false"/>
+		<property name="hashIterations" value="1024"/>
+		<property name="HashSalted" value="true"/>
+	
+	</bean>
+	<bean id="userRealm" class="cn.cntv.vpe.common.realm.UserRealm">
+		<property name="credentialsMatcher" ref="hashedCredentialsMatcher" />
+	</bean>
+
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<!-- shiro session管理类，如果是单点的话可以从这里删除 -->
+<!-- 		<property name="sessionManager" ref="defaultWebSessionManager" /> -->
+		<!--设置自定义realm -->
+		<property name="realm" ref="userRealm" />
+		<property name="cacheManager" ref="memoryConstrainedCacheManager" /><!-- memoryConstrainedCacheManager,customShiroCacheManager -->
+	</bean>
+	
+	<!-- 用户授权信息Cache（本机内存实现） -->  
+	<bean id="memoryConstrainedCacheManager" class="org.apache.shiro.cache.MemoryConstrainedCacheManager" />
+	
+	<!-- 用户session信息Cache （redis集群实现） -->
+	<bean id="customShiroSessionDAO" class="cn.cntv.vpe.common.shiro.CustomShiroSessionDAO">
+	    <property name="shiroSessionRepository" ref="jedisShiroSessionRepository" />
+	</bean>
+	<bean id="jedisShiroSessionRepository" class="cn.cntv.vpe.common.shiro.JedisShiroSessionRepository">
+		<property name="pool" ref="jedisPool"/>
+	</bean>
+	<bean id="defaultWebSessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+	    <property name="globalSessionTimeout" value="1800000" />
+		<property name="sessionDAO" ref="customShiroSessionDAO" />
+	</bean>
+	
+	<bean id="jedisShiroCacheRepository" class="cn.cntv.vpe.common.shiro.JedisShiroCacheRepository">
+		<property name="pool" ref="jedisPool"/>
+	</bean>
+	<!-- 用户授权信息Cache（redis集群实现） -->  
+	<bean id="customShiroCacheManager" class="cn.cntv.vpe.common.shiro.CustomShiroCacheManager">  
+	    <property name="shiroCacheManager" ref="jedisShiroCacheManager" />  
+	</bean>
+	<bean id="jedisShiroCacheManager" class="cn.cntv.vpe.common.shiro.JedisShiroCacheManager" />
+	
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<property name="securityManager" ref="securityManager" />
+		<property name="loginUrl" value="/login_reLogin.action" />
+		<property name="successUrl" value="/project" />
+		<property name="unauthorizedUrl" value="/unauthorized.jsp" />
+		<property name="filterChainDefinitions">
+			<value>
+				/login.jsp = anon
+				/kz/kz1200_*= anon
+				/common/** = authc
+				/ke/ke0100_index = authc
+				
+				
+				<!--视频库-->
+				/ka/ka0100_zy*=authc,perms[menu:ka:ka0100_zy]
+				/ka/ka0100_jy*=authc,perms[menu:ka:ka0100_jy]
+				/ka/ka0100_sc*=authc,perms[menu:ka:ka0100_sc]				
+				/kx/kx0900_searchUserInfoByOrgId=authc
+				/kx/kx0900_findUserForDir=authc
+				<!--一键删除-->
+				/ka/ka2000*=authc,perms[menu:ka:ka2000]
+				
+				
+				<!--视频集库-->				
+				/kb/kb0100_zy*=authc,perms[menu:kb:kb0100_zy]
+				/kb/kb0100_jy*=authc,perms[menu:kb:kb0100_jy]
+				/kb/kb0100_sc*=authc,perms[menu:kb:kb0100_sc]
+				<!--/kb/kb06*=authc,perms[menu:kb:kb0600]-->
+				/kb/kb09*=authc,perms[menu:kb:kb0900]				
+
+				<!--虚拟视频集-->
+				
+				/ke/ke01*=authc,perms[menu:ke:ke0100]	
+				/kb/kb0600_list*=authc							
+				
+				<!--人物库-->
+				/kc/kc0200_list*=authc,perms[menu:kc:kc0200_zy]
+				/kc/kc0200_jylist*=authc,perms[menu:kc:kc0200_jy]
+				
+				<!--TAG管理-->
+				<!-- /kc/kc03*=authc,perms[menu:kc:kc0300] -->
+				<!--系统管理-->
+				<!--系统日志-->
+				<!--操作日志-->
+				/kx/kx01*=authc,perms[menu:kx:kx0100]
+				<!--接口日志-->
+				<!-- /kx/kx02*=authc,perms[menu:kx:kx0200] -->
+				<!--基础配置-->
+				<!--部门管理-->
+				/kx/kx03100*=authc,perms[menu:kx:kx3100]
+				<!--参数配置-->
+				/kx/kx03*=authc,perms[menu:kx:kx0300]
+				<!--数据字典-->
+				/kx/kx14*=authc,perms[menu:kx:kx1400]
+				<!--统一频道-->
+				/kx/kx05*=authc,perms[menu:kx:kx0500]
+				<!--所属子台-->
+				/kx/kx06*=authc,perms[menu:kx:kx0600]
+				<!--接口管理-->
+				/kx/kx07*=authc,perms[menu:kx:kx0700]
+				<!--安全令牌管理-->
+				/kx/kx1500*=authc,perms[menu:kx:kx1500]
+				<!--IP管理-->
+				/kx/kx1501*=authc,perms[menu:kx:kx1501]
+				<!--匹配规则-->
+				/kx/kx16*=authc,perms[menu:kx:kx1600]
+				<!--接收数据-->
+				/kx/kx17*=authc,perms[menu:kx:kx1700]
+				<!--下发数据-->
+				/kx/kx18*=authc,perms[menu:kx:kx1800]
+				<!--数据映射-->
+				<!-- /kx/kx20*=authc,perms[menu:kx:kx2000] -->
+				<!--接口配置-->				
+				<!-- /kx/kx20*=authc,perms[menu:kx:kx1900] -->				
+								
+				<!--结构管理-->
+				<!--媒介结构-->
+				/kx/kx04*=authc,perms[menu:kx:kx0400]
+				<!--分类结构-->
+				/kc/kc07*=authc,perms[menu:kc:kc0700]
+				<!--用户权限-->
+				<!--角色管理-->
+				
+				/kx/kx08*=authc,perms[menu:kx:kx0800]
+				/kx/kx0860*=authc,perms[menu:kx:kx0860]
+				<!--用户管理-->
+				
+				/kx/kx0902_changePassword=anon
+				/kx/kx0902*=authc
+				/kx/kx09*=authc,perms[menu:kx:kx0900]
+				<!--调度管理-->
+				<!--播控-->
+<!-- 				/kd/kd01*=authc,perms[menu:kd:kd0100] -->
+				<!--订单-->				
+				<!-- DD提交/撤回 -->
+				/kd/kd0400_submittasks*=authc,perms[menu:kd:edit:spdb]
+				/kd/kd0301_submittasks*=authc,perms[menu:kd:edit:zbzb]
+				/kd/kd0601_submittasks*=authc,perms[menu:kd:edit:wlsp]
+				
+				/kd/kd0400_withdraw*=authc,perms[menu:kd:edit:spdb]
+				/kd/kd0301_withdraw*=authc,perms[menu:kd:edit:zbzb]
+				/kd/kd0601_withdraw*=authc,perms[menu:kd:edit:wlsp]
+				<!-- DD领取/释放 -->
+				/kd/kd0400_receive*=authc,perms[menu:kd:get:spdb]
+				/kd/kd0301_receive*=authc,perms[menu:kd:get:zbzb]
+				/kd/kd0601_receive*=authc,perms[menu:kd:get:wlsp]
+				
+				/kd/kd0400_openfree*=authc,perms[menu:kd:get:spdb]
+				/kd/kd0301_openfree*=authc,perms[menu:kd:get:zbzb]
+				/kd/kd0601_openfree*=authc,perms[menu:kd:get:wlsp]
+				<!-- DD审核 -->
+				/kd/kd0400_toexamine*=authc,perms[menu:kd:verify:spdb]
+				/kd/kd0301_toexamine*=authc,perms[menu:kd:verify:zbzb]
+				/kd/kd0601_toexamine*=authc,perms[menu:kd:verify:wlsp]
+				<!-- DD审批 -->
+				/kd/kd0400_approval*=authc,perms[menu:kd:approve:spdb]
+				/kd/kd0301_approval*=authc,perms[menu:kd:approve:zbzb]
+				/kd/kd0601_approval*=authc,perms[menu:kd:approve:wlsp]
+				<!-- DD发布
+				/kd/kd0400_release*=authc,perms[menu:kd:assign:spdb]
+				/kd/kd0301_release*=authc,perms[menu:kd:assign:zbzb]
+				/kd/kd0601_release*=authc,perms[menu:kd:assign:wlsp]
+				-->
+				<!-- DD确认-->
+				/kd/kd0400_confirm*=authc,perms[menu:kd:confirm:spdb]
+				/kd/kd0301_confirm*=authc,perms[menu:kd:confirm:zbzb]
+				/kd/kd0601_confirm*=authc,perms[menu:kd:confirm:wlsp]
+				<!-- DD归档-->
+				/kd/kd0400_filedoc*=authc,perms[menu:kd:archive:spdb]
+				/kd/kd0301_filedoc*=authc,perms[menu:kd:archive:zbzb]
+				/kd/kd0601_filedoc*=authc,perms[menu:kd:archive:wlsp]
+				<!-- DD END -->
+				
+				<!-- 备注 -->
+				/kd/kd0400_addmark*=authc,perms[menu:kd:mark:spdb]
+				/kd/kd0301_addmark*=authc,perms[menu:kd:mark:zbzb]
+				/kd/kd0601_addmark*=authc,perms[menu:kd:mark:wlsp]
+				
+				<!--SPDB 新建/保存/更新 /提交 -->
+				/kd/kd0200_edit*=authc,perms[menu:kd:edit:spdb]
+				/kd/kd0200_save*=authc,perms[menu:kd:edit:spdb]
+				
+				<!--ZBZB  保存 /创建/修改/提交 -->
+				/kd/kd0300_edit*=authc,perms[menu:kd:edit:zbzb]				
+				/kd/kd0300_submit*=authc,perms[menu:kd:edit:zbzb]
+				
+				<!-- WLSP 保存 /创建/修改/提交 -->
+				/kd/kd0600_edit*=authc,perms[menu:kd:edit:wlsp]
+				/kd/kd0600_save*=authc,perms[menu:kd:edit:wlsp]
+				
+				<!-- 删除 -->
+				/kd/kd0300_delete*=authc,perms[menu:kd:delete:zbzb]
+				/kd/kd0200_delete*=authc,perms[menu:kd:delete:spdb]
+				/kd/kd0600_delete*=authc,perms[menu:kd:delete:wlsp]
+								
+				<!-- 查看 -->
+				/kd/kd0200=authc,perms[menu:kd:kd0200]
+				/kd/kd0200_list*=authc,perms[menu:kd:kd0200]
+				/kd/kd0200_view*=authc,perms[menu:kd:kd0200]
+				/kd/kd0300_view*=authc,perms[menu:kd:kd0200]
+				/kd/kd0600_view*=authc,perms[menu:kd:kd0200]
+
+				<!-- 打印 -->
+				/kd/kd0300_print*=authc,perms[menu:kd:kd0200]
+				/kd/kd0200_print*=authc,perms[menu:kd:kd0200]
+				/kd/kd0600_print*=authc,perms[menu:kd:kd0200]
+				
+				<!--转码策略-->
+				/ks/ks0100_edit=authc,perms[menu:ks:stra:mang]
+				/ks/ks0100_sava=authc,perms[menu:ks:stra:mang]
+				/ks/ks0100_view=authc,perms[menu:ks:stra:mang]
+				/ks/ks0100_list=authc,perms[menu:ks:stra:mang]
+				/ks/ks0100=authc,perms[menu:ks:stra:mang]
+				/ks/ks0100_checkNameForStr=authc,perms[menu:ks:stra:mang]
+				/ks/ks0100_isdel=authc,perms[menu:ks:stra:mang]
+				/ks/ks0100_saveSubAjax=authc,perms[menu:ks:stra:mang]
+				
+				
+				<!-- 码流 -->
+				/ks/ks0100_sublist=authc,perms[menu:ks:cfg:mang]
+				/ks/ks0100_viewsub=authc,perms[menu:ks:cfg:mang]
+				/ks/ks0100_saveSub=authc,perms[menu:ks:cfg:mang]
+				/ks/ks0100_editSub=authc,perms[menu:ks:cfg:mang]
+				/ks/ks0100_checkNameForCfg=authc,perms[menu:ks:cfg:mang]
+				/ks/ks0100_issubdel=authc,perms[menu:ks:cfg:mang]
+				/ks/ks0100_onchanges=authc,perms[menu:ks:cfg:mang]
+				/ks/ks0100_allEditLogo=anon
+				<!-- 策略发布 -->
+				/ks/ks0200*=authc,perms[menu:ks:stra:rele]
+
+				
+				
+				<!--增值数据-->
+				<!--爱看NBA-->
+<!-- 				/kd/kd03*=authc,perms[menu:kd:kd0300] -->
+				<!--粗精切匹配-->
+<!-- 				/kd/kd04*=authc,perms[menu:kd:kd0400] -->
+				<!--多角度视频-->
+<!-- 				/kd/kd05*=authc,perms[menu:kd:kd0500] -->
+				<!--统计管理-->                       			
+				<!--清分管理-->
+<!-- 				/kd/kd07*=authc,perms[menu:kd:kd0700] -->
+				<!--机构统计-->
+				/bi/bi010*=authc,perms[menu:bi:bi0100]
+				<!--分类统计-->
+				 /bi/bi011*=authc 
+				<!--子台统计-->
+				/bi/bi012*=authc,perms[menu:bi:bi0120]
+				<!--栏目关键字统计-->
+				/bi/bi013*=	authc,perms[menu:bi:bi0130]
+				<!--视频统计-->
+				/bi/bi014*=authc,perms[menu:bi:bi0140]
+				<!--视频集统计-->
+				/bi/bi015*=authc,perms[menu:bi:bi0150]
+				<!--频道统计-->
+				/bi/bi016*=authc,perms[menu:bi:bi0160]
+				<!--视频集查询-->
+				/bi/bi017*=authc,perms[menu:bi:bi0170]
+				<!--视频查询-->
+				/bi/bi018*=authc,perms[menu:bi:bi0180]
+				<!--虚拟视频集查询-->
+				/bi/bi019*=authc,perms[menu:bi:bi0190]
+				<!--虚拟视频集统计-->
+				/bi/bi020*=authc,perms[menu:bi:bi0200]
+				<!--发送视频统计-->
+				/bi/bi021*=authc,perms[menu:bi:bi0210]
+				<!--发送视频集统计-->
+				/bi/bi022*=authc,perms[menu:bi:bi0220]
+				<!--订单统计-->
+				/bi/bi023*=authc,perms[menu:bi:bi0230]
+				<!--栏目策略一览统计-->
+				/bi/bi024*=authc,perms[menu:bi:bi0240]
+				<!--生产人员业绩统计-->
+				/bi/bi025*=authc,perms[menu:bi:bi0250]
+				<!--部门订单生产入库统计-->
+				/bi/bi026*=authc,perms[menu:bi:bi0260]
+				<!--删除视频统计-->
+				/bi/bi027*=authc,perms[menu:bi:bi0270]
+				<!--部门订单转码发送统计-->
+				/bi/bi028*=authc,perms[menu:bi:bi0280]
+				<!--部门订单转码予实统计-->
+				/bi/bi029*=authc,perms[menu:bi:bi0290]
+				<!--转码的生产入库统计-->
+				/bi/bi030*=authc,perms[menu:bi:bi0300]
+				<!--转码的发送统计-->
+				/bi/bi031*=authc,perms[menu:bi:bi0310]
+				<!--栏目策略明细统计-->
+				/bi/bi032*=authc,perms[menu:bi:bi0320]
+				<!--部门订单入库明细查询-->
+				/bi/bi033*=authc,perms[menu:bi:bi0330]
+				<!--业务媒资统计-->
+				/bi/bi034*=authc,perms[menu:bi:bi0340]
+				<!--生产人员业绩明细查询-->
+				/bi/bi035*=authc,perms[menu:bi:bi0350]
+				<!--订单统计-->
+				/bi/bi036*=authc,perms[menu:bi:bi0360]
+				/bi/bi037*=authc,perms[menu:bi:bi0370]
+				/bi/bi038*=authc,perms[menu:bi:bi0380]
+				/bi/bi039*=authc,perms[menu:bi:bi0390]
+				/bi/bi040*=authc,perms[menu:bi:bi0400]
+				<!--CNTV服务对象查询-->
+				/bi/bi041*=authc,perms[menu:bi:bi0410]	
+				<!--视频状态统计-->
+				/bi/bi042*=authc,perms[menu:bi:bi0420]	
+				<!--高清栏目视频统计-->
+				/bi/bi043*=authc,perms[menu:bi:bi0430]
+				<!--制作时效统计-->
+				/bi/bi044*=authc,perms[menu:bi:bi0440]
+				<!--编目时效统计-->
+				/bi/bi045*=authc,perms[menu:bi:bi0450]
+				<!--编目完整性统计-->
+				/bi/bi046*=authc,perms[menu:bi:bi0460]		
+				<!--产业链数据流转监控 -->
+				<!-- /bi/bi090*=authc,perms[menu:bi:bi0900] -->
+				<!--转码进度监控 -->
+				/kt/kt0100*=authc,perms[menu:bi:bi0910]
+				<!--编码器状态监控 -->
+				<!-- /bi/bi092*=authc,perms[menu:bi:bi0920]-->	
+				/invokeKB=authc,perms[menu:cntvkb]
+<!-- 				/ka/** = authc, roles[administrator] -->
+
+<!-- 订单 -->
+				/ko/ko0600_drop=authc,perms[menu:produce:drop]
+				/ko/ko0600_restore=authc,perms[menu:produce:drop]
+				<!--/ko/ko0800_execute=authc,perms[menu:ko:edit:produce]
+				/ko/ko0800_save=authc,perms[menu:ko:edit:produce] 
+				/ko/ko0100_list=authc,perms[menu:ko:search:search]
+				/ko/ko0100_advsearchsc=authc,perms[menu:ko:search:search]
+				/ko/ko0100_advsearch=authc,perms[menu:ko:search:search] -->
+				<!--  生产订单  -->
+				<!-- /ko/ko0300_doOp=authc,perms[menu:ko:forcerollback:produce]
+				/ko/ko0100_deletebyid=authc,perms[menu:ko:delete:produce] -->
+				<!-- /ko/ko0100_advsearch=authc,perms[menu:ko:search:type:produce]
+				/ko/ko0100_advsearchsc=authc,perms[menu:ko:search:type:produce]
+				/ko/ko0100_list=authc,perms[menu:ko:search:type:produce] 
+				/ko/ko/ko0100_listsc=authc,perms[menu:ko:search:type:produce] -->
+				<!-- /ko/ko0400*=authc,perms[menu:ko:remark:produce]
+				/ko/ko0300_doOp=authc,perms[menu:ko:verify:produce]
+				/ko/ko0300_doOp=authc,perms[menu:ko:approve:produce]
+				/ko/ko0300_doOp=authc,perms[menu:ko:confirm:produce]
+				/ko/ko0300_doOp=authc,perms[menu:ko:archive:produce] 
+				/ko/ko0300_saveremark=authc,perms[menu:ko:mark:produce]
+				/ko/ko0300_setordstop=authc,perms[menu:ko:stop:produce] -->
+				
+				<!--  库存调用订单  -->
+				<!-- /ko/ko0800_execute=authc,perms[menu:ko:edit:callback] -->
+				<!-- /ko/ko0100_deletebyid=authc,perms[menu:ko:delete:callback] -->
+				<!--/ko/ko0100_advsearch=authc,perms[menu:ko:search:type:callback]
+				/ko/ko0100_advsearchsc=authc,perms[menu:ko:search:type:callback]
+				/ko/ko0100_list=authc,perms[menu:ko:search:type:callback]
+				/ko/ko/ko0100_listsc=authc,perms[menu:ko:search:type:callback] -->
+				<!-- /ko/ko0400*=authc,perms[menu:ko:remark:callback]
+				/ko/ko0200_doOp=authc,perms[menu:ko:verify:callback]
+				/ko/ko0200_doOp=authc,perms[menu:ko:approve:callback]
+				/ko/ko0200_doOp=authc,perms[menu:ko:confirm:callback]
+				/ko/ko0200_doOp=authc,perms[menu:ko:archive:callback]
+				/ko/ko0200_saveremark=authc,perms[menu:ko:mark:callback]
+				/ko/ko0200_setordstop=authc,perms[menu:ko:stop:callback] -->
+				
+				<!--  文件下载订单  -->
+				<!-- /ko/ko0800_execute=authc,perms[menu:ko:edit:download] 
+				/ko/ko0100_deletebyid=authc,perms[menu:ko:delete:download]-->
+				<!-- /ko/ko0100_advsearch=authc,perms[menu:ko:search:type:download]
+				/ko/ko0100_advsearchsc=authc,perms[menu:ko:search:type:download]
+				/ko/ko0100_list=authc,perms[menu:ko:search:type:download]
+				/ko/ko/ko0100_listsc=authc,perms[menu:ko:search:type:download] 
+				/ko/ko0400*=authc,perms[menu:ko:remark:download]
+				/ko/ko0500_doOp=authc,perms[menu:ko:confirm:downloadbj]
+				/ko/ko0500_doOp=authc,perms[menu:ko:confirm:downloadwx]
+				/ko/ko0500_doOp=authc,perms[menu:ko:archive:download]
+				/ko/ko0200_saveremark=authc,perms[menu:ko:mark:download]-->
+<!-- 订单end -->
+<!-- 大屏管理 -->
+				<!-- 线上 -->
+				<!-- /kz/kz*=authc,perms[menu:kz:kz0100]	
+				线下
+				/ky/ky*=authc,perms[menu:kz:all] -->	
+
+    <!--  ovp begin -->
+    /ko/ko1200_create=authc,perms[menu:ko:edit:ovp] 
+    /ko/ko1200_edit=authc,perms[menu:ko:edit:ovp] 
+    /ko/ko1200_view=authc,perms[menu:ko:edit:ovp] 
+    /ko/ko1200_print=authc,perms[menu:ko:edit:ovp] 
+    /ko/ko1200_save_failed=authc,perms[menu:ko:edit:ovp] 
+    <!--  ovp end -->
+    
+				/ka/** = authc
+				/kb/** = authc
+				/kc/** = authc
+				/ke/** = authc
+				/kx/** = authc
+				/kf/** = authc
+				<!-- /kz/** = authc -->
+				/ko/** = authc
+				<!-- /ky/** = authc -->
+			</value>
+		</property>
+	</bean>
+
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
+
+	<bean
+		class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="staticMethod"
+			value="org.apache.shiro.SecurityUtils.setSecurityManager" />
+		<property name="arguments" ref="securityManager" />
+	</bean>
+
+</beans>
